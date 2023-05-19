@@ -13,7 +13,6 @@ class Button:
     def draw(self, surface):
         action = False
         pos = pygame.mouse.get_pos()
-
         if self.rect.collidepoint(pos):
             if pygame.mouse.get_pressed()[0] == 1 and not self.clicked:
                 self.clicked = True
