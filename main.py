@@ -7,9 +7,10 @@ FPS = 60
 WIDTH = 1440
 HEIGHT = 840
 ENEMY_SIZE = 35
-PLAYER_SIZE = 45
-BOSS_SIZE = 60
+PLAYER_SIZE = 50
+BOSS_SIZE = 80
 ENEMY_TYPES = 11
+RAGE_TIME = 3000
 
 
 class Circle:
@@ -114,17 +115,18 @@ def new_boss():
 def game_over(player, screen, record):
     screen.fill((202, 228, 241))
     game_over_font = pygame.font.SysFont('comicsans', 60)
-    game_over_text = game_over_font.render(f'Игра окончена!', False, 'black')
-    screen.blit(game_over_text, (WIDTH // 2 - 250, HEIGHT // 2 - 200))
+    game_over_text = game_over_font.render(f'Вас догнало пиво!', False, 'black')
+    pass
+    screen.blit(game_over_text, (WIDTH // 2 - 300, HEIGHT // 2 - 200))
     draw_text = game_over_font.render(f'Ваш результат: {player.score}', False, 'black')
-    screen.blit(draw_text, (WIDTH // 2 - 250, HEIGHT // 2 - 120))
+    screen.blit(draw_text, (WIDTH // 2 - 300, HEIGHT // 2 - 120))
     if player.score > record:
         record_text = game_over_font.render(f'Вы установили новый рекорд!', False, 'yellow')
         with open('record.txt', 'w') as f:
             f.write(str(player.score))
     else:
         record_text = game_over_font.render(f'Рекорд: {record}', False, 'yellow')
-    screen.blit(record_text, (WIDTH // 2 - 250, HEIGHT // 2 - 40))
+    screen.blit(record_text, (WIDTH // 2 - 300, HEIGHT // 2 - 40))
     pygame.display.update()
     pygame.time.delay(3000)
 
@@ -189,7 +191,7 @@ def gaming_loop():
         record = int(data) if data else 0
     while running:
         for event in pygame.event.get():
-            boss_lately_killed = boss_killed_time and pygame.time.get_ticks() - boss_killed_time < 2000
+            boss_lately_killed = boss_killed_time and pygame.time.get_ticks() - boss_killed_time < RAGE_TIME
             if event.type == pygame.QUIT:
                 running = False
             if event.type == NEW_BULLET and not boss_lately_killed:
@@ -243,26 +245,24 @@ def menu():
             pygame.quit()
             return False
         pygame.display.update()
-        clock.tick(10)
+        clock.tick(30)
 
 
 if __name__ == '__main__':
     pygame.init()
-    FPS = 60
     screen = pygame.display.set_mode((WIDTH, HEIGHT))
     clock = pygame.time.Clock()
-
     leha_image = pygame.image.load('Assets/leha.png')
     leha = pygame.transform.scale(leha_image, (PLAYER_SIZE * 2, PLAYER_SIZE * 2))
     zombie_images = [pygame.image.load(f'Assets/pivo/beer{i}.png') for i in range(1, ENEMY_TYPES + 1)]
     zombies = [pygame.transform.scale(zombie, (ENEMY_SIZE * 2, ENEMY_SIZE * 2)) for zombie in zombie_images]
     boss_image = pygame.image.load('Assets/boss.png')
     boss = pygame.transform.scale(boss_image, (BOSS_SIZE * 2, BOSS_SIZE * 2))
-    background_image = pygame.image.load('Assets/background_green.png')
+    background_image = pygame.image.load('Assets/background_ya.png')
     background = pygame.transform.scale(background_image, (WIDTH, WIDTH))
     NEW_BULLET, bullet_time = pygame.USEREVENT + 1, 250
     NEW_ENEMY, enemy_time = pygame.USEREVENT + 2, 1000
-    NEW_BOSS, boss_time = pygame.USEREVENT + 3, 10000
+    NEW_BOSS, boss_time = pygame.USEREVENT + 3, 12000
     NEW_FAST_ENEMY, fast_enemy_time = pygame.USEREVENT + 4, 1500
     NEW_BULLET_FAST, bullet_time_fast = pygame.USEREVENT + 5, 125
     pygame.time.set_timer(NEW_BULLET, bullet_time)
