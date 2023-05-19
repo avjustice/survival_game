@@ -11,6 +11,9 @@ running = True
 dt = 0
 ENEMY_SIZE = 25
 PLAYER_SIZE = 40
+with open('record.txt', 'r') as f:
+    data = f.read()
+    RECORD = int(data) if data else 0
 
 
 class Circle:
@@ -41,8 +44,8 @@ class Player(Circle):
     def __init__(self, x, y, radius):
         super().__init__(x, y, radius)
         self.speed = 300
-        self.health = 10
-        self.killed = 0
+        self.health = 5
+        self.score = 0
 
     def player_movement(self, keys):
         change_x, change_y = 0, 0
@@ -94,12 +97,31 @@ def new_enemy():
     ])
 
 
+def game_over():
+    GAME_OVER = pygame.font.SysFont('Arial', 50)
+    game_over_text = GAME_OVER.render(f'Игра окончена!', False, 'yellow')
+    screen.blit(game_over_text, (200, screen.get_height() // 2 - 250))
+    draw_text = GAME_OVER.render(f'Ваш результат: {player.score}', False, 'yellow')
+    screen.blit(draw_text, (200, screen.get_height() // 2 - 190))
+    if player.score > RECORD:
+        record_text = GAME_OVER.render(f'Вы установили новый рекорд!', False, 'yellow')
+        with open('record.txt', 'w') as f:
+            f.write(str(player.score))
+    else:
+        record_text = GAME_OVER.render(f'Рекорд: {RECORD}', False, 'yellow')
+    screen.blit(record_text, (200, screen.get_height() // 2 - 130))
+    pygame.display.update()
+    pygame.time.delay(5000)
+
+
 player_pos = pygame.Vector2(screen.get_width() / 2, screen.get_height() / 2)
 player = Player(*player_pos, PLAYER_SIZE)
 dara_image = pygame.image.load('Assets/dara_game.png')
 dara = pygame.transform.scale(dara_image, (PLAYER_SIZE * 2, PLAYER_SIZE * 2))
+
 zombie_images = [pygame.image.load(f'Assets/zombie{i}.png') for i in range(1, 5)]
 zombies = [pygame.transform.scale(zombie, (ENEMY_SIZE * 2, ENEMY_SIZE * 2)) for zombie in zombie_images]
+
 background_image = pygame.image.load('Assets/background_green.png')
 background = pygame.transform.scale(background_image, (screen.get_width(), screen.get_width()))
 
@@ -125,6 +147,7 @@ while running:
         #     player.player_shooting(bullets)
     screen.blit(background, (0, 0))
     screen.blit(dara, (player.x - PLAYER_SIZE, player.y - PLAYER_SIZE))
+
     to_remove_enemies = set()
     to_remove_bullets = set()
 
@@ -132,13 +155,16 @@ while running:
         screen.blit(zombies[green_circle.type], (green_circle.x - ENEMY_SIZE, green_circle.y - ENEMY_SIZE))
         green_circle.enemy_move(player)
         if player.check_collision(green_circle):
-            player.health -= 1
+            player.health = max(player.health - 1, 0)
             to_remove_enemies.add(green_circle)
         for bullet in bullets:
             if bullet.check_collision(green_circle):
                 to_remove_enemies.add(green_circle)
                 to_remove_bullets.add(bullet)
-    player.killed += len(to_remove_enemies)
+    if player.health == 0:
+        game_over()
+        break
+    player.score += len(to_remove_enemies)
     for bullet in bullets:
         if (bullet.x > screen.get_width() + bullet.radius or bullet.x < -bullet.radius
                 or bullet.y > screen.get_height() + bullet.radius or bullet.y < -bullet.radius):
@@ -155,7 +181,7 @@ while running:
 
     health_text = FONT.render(f"Health: {player.health}", True, 'white')
     screen.blit(health_text, (10, 10))
-    kills_text = FONT.render(f"Kills: {player.killed}", True, 'red')
+    kills_text = FONT.render(f"Kills: {player.score}", True, 'red')
     screen.blit(kills_text, (10, 60))
     pygame.display.update()
     dt = clock.tick(FPS) / 1000
