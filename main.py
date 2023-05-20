@@ -9,6 +9,7 @@ HEIGHT = 840
 ENEMY_SIZE = 35
 PLAYER_SIZE = 50
 BOSS_SIZE = 80
+MEDIC_SIZE = 50
 ENEMY_TYPES = 11
 RAGE_TIME = 3000
 
@@ -21,6 +22,14 @@ class Circle:
 
     def check_collision(self, other):
         return self.radius + other.radius >= ((self.x - other.x) ** 2 + (self.y - other.y) ** 2) ** .5
+
+
+class Medic(Circle):
+    health = 1
+
+    def __init__(self, x, y, radius, image):
+        super().__init__(x, y, radius)
+        self.image = image
 
 
 class Enemy(Circle):
@@ -141,7 +150,7 @@ def text_render(player, record):
     screen.blit(record_text, (10, 110))
 
 
-def draw_game(player_to_draw, enemies_to_draw, bullets_to_draw, record):
+def draw_game(player_to_draw, enemies_to_draw, bullets_to_draw, medics_to_draw, record):
     screen.blit(background, (0, 0))
     text_render(player=player_to_draw, record=record)
     screen.blit(player_to_draw.image, (player_to_draw.x - PLAYER_SIZE, player_to_draw.y - PLAYER_SIZE))
@@ -152,12 +161,15 @@ def draw_game(player_to_draw, enemies_to_draw, bullets_to_draw, record):
             screen.blit(zombies[enemy_to_draw.type], (enemy_to_draw.x - ENEMY_SIZE, enemy_to_draw.y - ENEMY_SIZE))
     for bullet_to_draw in bullets_to_draw:
         bullet_to_draw.draw_circle()
+    for medic_to_draw in medics_to_draw:
+        screen.blit(medic_to_draw.image, (medic_to_draw.x - MEDIC_SIZE, medic_to_draw.y - MEDIC_SIZE))
     pygame.display.update()
 
 
-def remove_dead_elements(player_check, enemies_check, bullets_check):
+def remove_dead_elements(player_check, enemies_check, bullets_check, medics_check):
     dead_enemies = set()
     dead_bullets = set()
+    dead_medics = set()
     for enemy_check in enemies_check:
         if player_check.check_collision(enemy_check):
             player_check.health = max(player_check.health - 1, 0)
@@ -176,13 +188,18 @@ def remove_dead_elements(player_check, enemies_check, bullets_check):
         if (bullet_check.x > WIDTH + bullet_check.radius or bullet_check.x < -bullet_check.radius
                 or bullet_check.y > HEIGHT + bullet_check.radius or bullet_check.y < -bullet_check.radius):
             dead_bullets.add(bullet_check)
-    return dead_enemies, dead_bullets
+    for medic_check in medics_check:
+        if player_check.check_collision(medic_check):
+            player_check.health += medic_check.health
+            dead_medics.add(medic_check)
+    return dead_enemies, dead_bullets, dead_medics
 
 
 def gaming_loop():
     player = Player(WIDTH // 2, HEIGHT // 2, PLAYER_SIZE, leha)
     enemies = [new_enemy() for _ in range(6)]
     bullets = []
+    medics = []
     boss_killed_time = None
     running = True
     dt = 0
@@ -200,6 +217,8 @@ def gaming_loop():
                 player.player_shooting(bullets)
             if event.type == NEW_ENEMY:
                 enemies.append(new_enemy())
+            if event.type == NEW_MEDIC:
+                medics.append(Medic(random.randint(0, WIDTH), random.randint(0, HEIGHT), MEDIC_SIZE, anechka))
             if event.type == NEW_FAST_ENEMY and player.score >= 50:
                 enemies.append(new_enemy(False))
                 if player.score >= 100:
@@ -207,14 +226,16 @@ def gaming_loop():
             if event.type == NEW_BOSS:
                 enemies.append(new_boss())
 
-        to_remove_enemies, to_remove_bullets = remove_dead_elements(player, enemies, bullets)
+        to_remove_enemies, to_remove_bullets, to_remove_medics = remove_dead_elements(player, enemies, bullets, medics)
         for bullet in to_remove_bullets:
             bullets.remove(bullet)
+        for medic in to_remove_medics:
+            medics.remove(medic)
         for enemy in to_remove_enemies:
             if isinstance(enemy, Boss):
                 boss_killed_time = pygame.time.get_ticks()
             enemies.remove(enemy)
-        draw_game(player, enemies, bullets, record)
+        draw_game(player, enemies, bullets, medics, record)
         if player.health == 0:
             game_over(player, screen, record)
             break
@@ -258,6 +279,8 @@ if __name__ == '__main__':
     zombies = [pygame.transform.scale(zombie, (ENEMY_SIZE * 2, ENEMY_SIZE * 2)) for zombie in zombie_images]
     boss_image = pygame.image.load('Assets/boss.png')
     boss = pygame.transform.scale(boss_image, (BOSS_SIZE * 2, BOSS_SIZE * 2))
+    anechka_image = pygame.image.load('Assets/anna.png')
+    anechka = pygame.transform.scale(anechka_image, (MEDIC_SIZE * 2, MEDIC_SIZE * 2))
     background_image = pygame.image.load('Assets/background_ya.png')
     background = pygame.transform.scale(background_image, (WIDTH, WIDTH))
     NEW_BULLET, bullet_time = pygame.USEREVENT + 1, 250
@@ -265,11 +288,13 @@ if __name__ == '__main__':
     NEW_BOSS, boss_time = pygame.USEREVENT + 3, 12000
     NEW_FAST_ENEMY, fast_enemy_time = pygame.USEREVENT + 4, 1500
     NEW_BULLET_FAST, bullet_time_fast = pygame.USEREVENT + 5, 125
+    NEW_MEDIC, medic_time = pygame.USEREVENT + 6, 15000
     pygame.time.set_timer(NEW_BULLET, bullet_time)
     pygame.time.set_timer(NEW_ENEMY, enemy_time)
     pygame.time.set_timer(NEW_BOSS, boss_time)
     pygame.time.set_timer(NEW_FAST_ENEMY, fast_enemy_time)
     pygame.time.set_timer(NEW_BULLET_FAST, bullet_time_fast)
+    pygame.time.set_timer(NEW_MEDIC, medic_time)
     DEFAULT_FONT = pygame.font.SysFont('comicsans', 40)
     while True:
         a = menu()
