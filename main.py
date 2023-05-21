@@ -204,12 +204,11 @@ def gaming_loop():
     boss_killed_time = None
     running = True
     dt = 0
+    record = 0
     if os.path.exists('record.txt'):
         with open('record.txt', 'r') as f:
             data = f.read()
-            record = int(data) if data else 0
-    else:
-        record = 0
+            record = int(data) if data else record
     while running:
         for event in pygame.event.get():
             boss_lately_killed = boss_killed_time and pygame.time.get_ticks() - boss_killed_time < RAGE_TIME
