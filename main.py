@@ -155,6 +155,8 @@ def draw_game(player_to_draw, enemies_to_draw, bullets_to_draw, medics_to_draw, 
     screen.blit(background, (0, 0))
     text_render(player=player_to_draw, record=record)
     screen.blit(player_to_draw.image, (player_to_draw.x - PLAYER_SIZE, player_to_draw.y - PLAYER_SIZE))
+    for medic_to_draw in medics_to_draw:
+        screen.blit(medic_to_draw.image, (medic_to_draw.x - MEDIC_SIZE, medic_to_draw.y - MEDIC_SIZE))
     for enemy_to_draw in enemies_to_draw:
         if isinstance(enemy_to_draw, Boss):
             screen.blit(boss, (enemy_to_draw.x - BOSS_SIZE, enemy_to_draw.y - BOSS_SIZE))
@@ -162,8 +164,6 @@ def draw_game(player_to_draw, enemies_to_draw, bullets_to_draw, medics_to_draw, 
             screen.blit(zombies[enemy_to_draw.type], (enemy_to_draw.x - ENEMY_SIZE, enemy_to_draw.y - ENEMY_SIZE))
     for bullet_to_draw in bullets_to_draw:
         bullet_to_draw.draw_circle()
-    for medic_to_draw in medics_to_draw:
-        screen.blit(medic_to_draw.image, (medic_to_draw.x - MEDIC_SIZE, medic_to_draw.y - MEDIC_SIZE))
     pygame.display.update()
 
 
